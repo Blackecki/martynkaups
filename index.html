@@ -66,8 +66,17 @@ z-index:20;
 
 /* mobile */
 #controls{position:absolute;bottom:0;width:100%;display:flex;justify-content:space-between;padding:15px}
-.btn{font-size:34px;background:rgba(255,255,255,.15);padding:12px 26px;border-radius:16px;backdrop-filter:blur(10px)}
-
+.btn{
+font-size:34px;
+background:rgba(255,255,255,.15);
+padding:12px 26px;
+border-radius:16px;
+backdrop-filter:blur(10px);
+/* wyłącz zaznaczanie na telefonie */
+user-select: none;
+-webkit-tap-highlight-color: transparent;
+outline: none;
+}
 </style>
 </head>
 <body>
@@ -88,8 +97,8 @@ z-index:20;
 <div id="player" style="display:none">🐭</div>
 
 <div id="controls" style="display:none">
-<div class="btn" id="left"></div>
-<div class="btn" id="right"></div>
+<div class="btn" id="left">◀</div>
+<div class="btn" id="right">▶</div>
 </div>
 
 <div id="loveScreen">kocham cię</div>
