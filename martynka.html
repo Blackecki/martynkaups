@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Dla Martyny 🌸</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,Arial;background:radial-gradient(circle at top,#1a0f2e,#05020b);overflow:hidden;color:white;height:100vh}
+#game{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* romantyczne światła */
+.light{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:floatLight 10s ease-in-out infinite}
+.light1{width:260px;height:260px;background:#ff6bd6;top:10%;left:10%}
+.light2{width:300px;height:300px;background:#6be1ff;bottom:10%;right:15%;animation-delay:3s}
+.light3{width:240px;height:240px;background:#ff9bd0;top:55%;left:65%;animation-delay:6s}
+@keyframes floatLight{0%,100%{transform:translateY(0)}50%{transform:translateY(-50px)}}
+
+/* serduszka tła */
+.heartbg{position:absolute;font-size:18px;opacity:.35;animation:heartFloat linear infinite}
+@keyframes heartFloat{0%{transform:translateY(110vh)}100%{transform:translateY(-20vh)}}
+
+/* ekran historii */
+#story{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-size:28px;padding:30px;cursor:pointer}
+#story small{font-size:16px;opacity:.7;margin-top:20px}
+
+/* UI gry */
+#ui{position:absolute;top:20px;left:50%;transform:translateX(-50%);text-align:center;font-size:22px}
+#message{font-size:20px;margin-top:6px;opacity:.9}
+
+/* gracz */
+#player{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);font-size:44px;transition:transform .05s linear}
+
+/* lilie */
+.lily{position:absolute;font-size:32px;animation:spin 4s linear infinite;pointer-events:none}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* spark */
+.spark{position:absolute;font-size:16px;animation:spark 700ms ease-out forwards}
+@keyframes spark{0%{transform:scale(.5);opacity:1}100%{transform:translateY(-40px) scale(1.5);opacity:0}}
+
+/* konfetti */
+.confetti{position:absolute;font-size:14px;animation:confettiFall 3s linear forwards}
+@keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(720deg)}}
+
+/* gratulacje */
+.winText{position:absolute;font-size:28px;font-weight:bold;animation:pop 1.5s ease-out forwards}
+@keyframes pop{0%{transform:scale(.4);opacity:0}40%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:0}}
+
+/* final screen */
+#loveScreen{
+position:absolute;
+inset:0;
+background:black;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:60px;
+letter-spacing:4px;
+opacity:0;
+pointer-events:none;
+transition:opacity 3s ease;
+z-index:20;
+}
+
+/* mobile */
+#controls{position:absolute;bottom:0;width:100%;display:flex;justify-content:space-between;padding:15px}
+.btn{font-size:34px;background:rgba(255,255,255,.15);padding:12px 26px;border-radius:16px;backdrop-filter:blur(10px)}
+
+</style>
+</head>
+<body>
+<div id="game">
+
+<div class="light light1"></div>
+<div class="light light2"></div>
+<div class="light light3"></div>
+
+<div id="story"></div>
+
+<div id="ui" style="display:none">
+<div>Martyna zbiera lilie 🌸</div>
+<div id="score">0 / 50</div>
+<div id="message">Pomóż myszce zebrać lilie 💖</div>
+</div>
+
+<div id="player" style="display:none">🐭</div>
+
+<div id="controls" style="display:none">
+<div class="btn" id="left">◀</div>
+<div class="btn" id="right">▶</div>
+</div>
+
+<div id="loveScreen">kocham cię</div>
+
+<audio id="music" src="1.mp3" loop></audio>
+
+</div>
+
+<script>
+
+const storyTexts=[
+"Dla mojej kochanej kobiety",
+"Martyna...",
+"Nie zdążyłem kupić Ci lilii",
+"ale zrobiłem coś dla Ciebie",
+"ta myszka to Ty 🐭",
+"złap dla siebie 50 lilii 🌸"
+]
+
+const story=document.getElementById("story")
+const ui=document.getElementById("ui")
+const player=document.getElementById("player")
+const controls=document.getElementById("controls")
+const music=document.getElementById("music")
+const loveScreen=document.getElementById("loveScreen")
+
+let step=0
+story.innerHTML=storyTexts[0]+"<small>(kliknij)</small>"
+
+story.onclick=()=>{
+step++
+if(step<storyTexts.length){
+story.innerHTML=storyTexts[step]+"<small>(kliknij)</small>"
+}else{
+story.style.display="none"
+startGame()
+}
+}
+
+function startGame(){
+ui.style.display="block"
+player.style.display="block"
+controls.style.display="flex"
+music.volume=.6
+music.play().catch(()=>{})
+}
+
+const game=document.getElementById("game")
+const scoreText=document.getElementById("score")
+const message=document.getElementById("message")
+
+let score=0
+let playerX=window.innerWidth/2
+let lilies=[]
+let gameWon=false
+
+let moveLeft=false
+let moveRight=false
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+
+function updatePlayer(){
+if(moveLeft)playerX-=6
+if(moveRight)playerX+=6
+playerX=clamp(playerX,20,window.innerWidth-20)
+player.style.left=playerX+"px"
+}
+
+function spawnLily(){
+if(gameWon) return
+
+const l=document.createElement("div")
+l.className="lily"
+l.innerText="🌸"
+
+const x=Math.random()*window.innerWidth
+
+l.style.left=x+"px"
+l.style.top="-40px"
+
+game.appendChild(l)
+
+lilies.push({el:l,x:x,y:-40})
+}
+setInterval(spawnLily,800)
+
+function spawnHeartBG(){
+const h=document.createElement("div")
+h.className="heartbg"
+h.innerText="💗"
+h.style.left=Math.random()*100+"vw"
+h.style.animationDuration=6+Math.random()*6+"s"
+game.appendChild(h)
+setTimeout(()=>h.remove(),12000)
+}
+setInterval(spawnHeartBG,700)
+
+function spark(x,y){
+const s=document.createElement("div")
+s.className="spark"
+s.innerText="✨"
+s.style.left=x+"px"
+s.style.top=y+"px"
+game.appendChild(s)
+setTimeout(()=>s.remove(),700)
+}
+
+function confetti(){
+for(let i=0;i<140;i++){
+const c=document.createElement("div")
+c.className="confetti"
+c.innerText=["🎉","💖","✨","🌸"][Math.floor(Math.random()*4)]
+c.style.left=Math.random()*100+"vw"
+c.style.animationDuration=2+Math.random()*2+"s"
+game.appendChild(c)
+setTimeout(()=>c.remove(),3000)
+}
+}
+
+function winSpam(){
+setInterval(()=>{
+const t=document.createElement("div")
+t.className="winText"
+t.innerText="GRATULACJE MARTYNA ❤️"
+t.style.left=Math.random()*90+"vw"
+t.style.top=Math.random()*80+"vh"
+game.appendChild(t)
+setTimeout(()=>t.remove(),1500)
+},250)
+}
+
+const compliments=[
+"Martyna jesteś cudowna ❤️",
+"Masz piękny uśmiech",
+"Jesteś wyjątkowa",
+"Jesteś moją ulubioną osobą",
+"Świat jest lepszy z Tobą"
+]
+
+function compliment(){
+message.innerText=compliments[Math.floor(Math.random()*compliments.length)]
+}
+
+function triggerLoveScreen(){
+setTimeout(()=>{
+loveScreen.style.opacity=1
+},15000)
+}
+
+function gameLoop(){
+updatePlayer()
+
+for(let i=lilies.length-1;i>=0;i--){
+const l=lilies[i]
+l.y+=3
+l.el.style.top=l.y+"px"
+
+const lilyRect=l.el.getBoundingClientRect()
+const playerRect=player.getBoundingClientRect()
+
+const hit = !(
+playerRect.right < lilyRect.left ||
+playerRect.left > lilyRect.right ||
+playerRect.bottom < lilyRect.top ||
+playerRect.top > lilyRect.bottom
+)
+
+if(hit){
+score++
+scoreText.innerText=score+" / 50"
+
+spark(l.x,l.y)
+
+l.el.remove()
+lilies.splice(i,1)
+
+if(score%10===0)compliment()
+
+if(score>=50 && !gameWon){
+
+gameWon=true
+confetti()
+winSpam()
+message.innerText="Udało się! Martyna zebrała wszystkie lilie 💖"
+triggerLoveScreen()
+}
+}
+
+if(l.y>window.innerHeight){
+l.el.remove()
+lilies.splice(i,1)
+}
+}
+
+requestAnimationFrame(gameLoop)
+}
+
+requestAnimationFrame(gameLoop)
+
+/* klawiatura */
+
+document.addEventListener("keydown",e=>{
+if(e.key==="a"||e.key==="ArrowLeft")moveLeft=true
+if(e.key==="d"||e.key==="ArrowRight")moveRight=true
+})
+
+document.addEventListener("keyup",e=>{
+if(e.key==="a"||e.key==="ArrowLeft")moveLeft=false
+if(e.key==="d"||e.key==="ArrowRight")moveRight=false
+})
+
+/* mobile */
+left.onpointerdown=()=>moveLeft=true
+right.onpointerdown=()=>moveRight=true
+left.onpointerup=()=>moveLeft=false
+right.onpointerup=()=>moveRight=false
+
+</script>
+</body>
+</html>
